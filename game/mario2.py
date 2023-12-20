@@ -19,25 +19,14 @@ RED = (255, 0, 0)
 
 # Create the screen
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Dodge the Falling Objects")
+pygame.display.set_caption("Mymario vs Angry Pong")
 
 # Load images
-# player_image = pygame.Surface((PLAYER_SIZE, PLAYER_SIZE))
-# player_image.fill(RED)
+background_image = pygame.image.load("images/back.png")
 player_image = pygame.image.load("images/hennysteel.png")
-
-# object_image = pygame.Surface((OBJECT_SIZE, OBJECT_SIZE))
-# object_image.fill(WHITE)
-# object_image = pygame.image.load("images/angrypongpong.png")
-#object_image = pygame.image.load("images/whiskers.png")
-
-object_image_map = {}
-
 angry_images = []
 for i in range(OBJECT_IMAGE_COUNT):
     angry_images.append(pygame.image.load(f"images/angrypongpong{i}.png"))
-
-background_image = pygame.image.load("images/back.png")
 
 # Player variables
 player_x = (SCREEN_WIDTH - PLAYER_SIZE) // 2
@@ -78,22 +67,29 @@ while True:
     object_spawn_timer += 1
     if object_spawn_timer == object_spawn_interval:
         new_obj_image = angry_images[random.randint(0, OBJECT_IMAGE_COUNT - 1)]
-        new_obj = [random.randint(
-            0, SCREEN_WIDTH - OBJECT_SIZE), -OBJECT_SIZE, new_obj_image]
+        new_obj = [
+            random.randint(0, SCREEN_WIDTH - OBJECT_SIZE),
+            -OBJECT_SIZE,
+            new_obj_image,
+        ]
         objects.append(new_obj)
         object_spawn_timer = 0
 
     for obj in objects:
         # if random.randint(0, 10) % 2:
         obj[1] += object_speed
-        #obj[0] += object_speed * random.randint(-1, 1)
+        # obj[0] += object_speed * random.randint(-1, 1)
 
     objects = [obj for obj in objects if obj[1] < SCREEN_HEIGHT]
 
     # Collision detection
     for obj in objects:
-        if player_x < obj[0] + OBJECT_SIZE and player_x + PLAYER_SIZE > obj[0] and \
-           player_y < obj[1] + OBJECT_SIZE and player_y + PLAYER_SIZE > obj[1]:
+        if (
+            player_x < obj[0] + OBJECT_SIZE
+            and player_x + PLAYER_SIZE > obj[0]
+            and player_y < obj[1] + OBJECT_SIZE
+            and player_y + PLAYER_SIZE > obj[1]
+        ):
             print("Game Over! Your Score:", score)
             pygame.quit()
             sys.exit()
@@ -102,7 +98,6 @@ while True:
     score += 1
 
     # Draw everything
-    #screen.fill((0, 0, 0))
     screen.blit(player_image, (player_x, player_y))
     for obj in objects:
         screen.blit(obj[2], (obj[0], obj[1]))
