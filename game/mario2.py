@@ -1,7 +1,8 @@
 import pygame
 import sys
 import random
-from data.game_object import GameObject
+from data.game_object import GameObject, GameObjectFactory
+from data.const_data import Constants
 
 
 def main():
@@ -12,9 +13,6 @@ def main():
     SCREEN_WIDTH = 1024
     SCREEN_HEIGHT = 768
     PLAYER_SIZE = 40
-    OBJECT_SIZE = 40
-    BULLET_SIZE = 30
-    OBJECT_IMAGE_COUNT = 4
     FPS = 60
 
     # Colors
@@ -28,10 +26,6 @@ def main():
     # Load images
     background_image = pygame.image.load("images/back.png")
     player_image = pygame.image.load("images/hennysteel.png")
-    angry_images = []
-    for i in range(OBJECT_IMAGE_COUNT):
-        angry_images.append(pygame.image.load(f"images/angrypongpong{i}.png"))
-    bullet_image = pygame.image.load("images/mango.png")
 
     # Player variables
     player_x = (SCREEN_WIDTH - PLAYER_SIZE) // 2
@@ -41,7 +35,6 @@ def main():
     objects = []
     bullets = []
     object_speed = 5
-    bullet_speed = 8
     object_spawn_timer = 0
     object_spawn_interval = 5
     bullet_ready = False
@@ -63,16 +56,17 @@ def main():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                bullets.append(
-                    GameObject(
-                        x=player_x,
-                        y=player_y,
-                        size=BULLET_SIZE,
-                        surface=bullet_image,
-                        speed=-bullet_speed,
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    bullets.append(
+                        GameObjectFactory.create_regular_bullet(x=player_x, y=player_y)
                     )
-                )
+                elif event.key == pygame.K_x:
+                    bullets.append(
+                        GameObjectFactory.create_penetrable_bullet(
+                            x=player_x, y=player_y
+                        )
+                    )
 
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT] and player_x > 0:
@@ -87,18 +81,13 @@ def main():
         object_spawn_timer += 1
         game_loop_counter += 1
         if object_spawn_timer == object_spawn_interval:
-            new_obj_image = angry_images[random.randint(
-                0, OBJECT_IMAGE_COUNT - 1)]
-            new_obj = GameObject(
-                x=random.randint(0, SCREEN_WIDTH - OBJECT_SIZE),
-                y=-OBJECT_SIZE,
-                size=OBJECT_SIZE,
-                surface=new_obj_image,
-                speed=object_speed
-                - 1
-                + random.randint(0, 2) * (1 + game_loop_counter / 200.0),
+            objects.append(
+                GameObjectFactory.create_angry_cat(
+                    x=random.randint(0, SCREEN_WIDTH - Constants.DEFAULT_OBJECT_SIZE),
+                    y=-Constants.DEFAULT_OBJECT_SIZE,
+                    game_loop_i=game_loop_counter,
+                )
             )
-            objects.append(new_obj)
             object_spawn_timer = 0
 
         for obj in objects:
@@ -120,9 +109,9 @@ def main():
                 for obj in objects
                 if not blt.check_collide((obj.x, obj.y), (obj.size, obj.size))
             ]
-            if len(objects) is not old_objects_len:
+            if len(objects) is not old_objects_len and not blt.can_penetrate():
                 used_bullets.append(blt)
-        # take out used bullets
+        # take out used bullets that can't penetrate
         bullets = [blt for blt in bullets if blt not in used_bullets]
 
         # Collision detection: objects and player
