@@ -5,6 +5,33 @@ from data.game_object import Boss, GameObject, GameObjectFactory
 from data.const_data import Constants
 
 
+def reset_game():
+    # Reset all game variables
+    player = GameObjectFactory.create_player(
+        x=(Constants.SCREEN_WIDTH - Constants.DEFAULT_PLAYER_SIZE) // 2,
+        y=Constants.SCREEN_HEIGHT - Constants.DEFAULT_PLAYER_SIZE - 10,
+    )
+    objects = []
+    bullets = []
+    object_spawn_timer = 0
+    object_spawn_interval = 5
+    score = 0
+    game_on = True
+    game_won = False
+    game_loop_counter = 0
+    return (
+        player,
+        objects,
+        bullets,
+        object_spawn_timer,
+        object_spawn_interval,
+        score,
+        game_on,
+        game_won,
+        game_loop_counter,
+    )
+
+
 def main():
     # Initialize Pygame
     pygame.init()
@@ -13,33 +40,30 @@ def main():
     screen = pygame.display.set_mode((Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT))
     pygame.display.set_caption("Henny Steel Rabbit vs Angry Cat")
 
+    # Fullscreen state
+    is_fullscreen = False
+
     # Load images
     background_image = pygame.image.load("images/back.png")
 
-    # Player variables
-    player = GameObjectFactory.create_player(
-        x=(Constants.SCREEN_WIDTH - Constants.DEFAULT_PLAYER_SIZE) // 2,
-        y=Constants.SCREEN_HEIGHT - Constants.DEFAULT_PLAYER_SIZE - 10,
-    )
-
-    # Object variables - list of GameObject
-    objects = []
-    bullets = []
-    object_spawn_timer = 0
-    object_spawn_interval = 5
-
-    # is the game done?
-    game_on = True
-    game_won = False
+    # Initialize game variables
+    (
+        player,
+        objects,
+        bullets,
+        object_spawn_timer,
+        object_spawn_interval,
+        score,
+        game_on,
+        game_won,
+        game_loop_counter,
+    ) = reset_game()
 
     # Score variables
-    score = 0
     font = pygame.font.Font(None, 36)
 
     # Clock to control the frame rate
     clock = pygame.time.Clock()
-
-    game_loop_counter = 0
 
     # Main game loop
     while True:
@@ -60,21 +84,32 @@ def main():
                             x=player.x, y=player.y
                         )
                     )
+                elif event.key == pygame.K_f:
+                    # Toggle fullscreen
+                    is_fullscreen = not is_fullscreen
+                    if is_fullscreen:
+                        screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+                    else:
+                        screen = pygame.display.set_mode(
+                            (Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT)
+                        )
                 elif not game_on and event.key == pygame.K_r:
-                    # reset everything
-                    # todo: put this into a common class / function
-                    player = GameObjectFactory.create_player(
-                        x=(Constants.SCREEN_WIDTH - Constants.DEFAULT_PLAYER_SIZE) // 2,
-                        y=Constants.SCREEN_HEIGHT - Constants.DEFAULT_PLAYER_SIZE - 10,
-                    )
-                    objects = []
-                    bullets = []
-                    object_spawn_timer = 0
-                    score = 0
-                    game_on = True
-                    game_won = False
-                    clock = pygame.time.Clock()
-                    game_loop_counter = 0
+                    # Reset game when game is over
+                    (
+                        player,
+                        objects,
+                        bullets,
+                        object_spawn_timer,
+                        object_spawn_interval,
+                        score,
+                        game_on,
+                        game_won,
+                        game_loop_counter,
+                    ) = reset_game()
+                elif event.key == pygame.K_q:
+                    # Quit the game
+                    pygame.quit()
+                    sys.exit()
 
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT] and player.x > 0:
@@ -110,7 +145,7 @@ def main():
             # create boss cat
             if (
                 score > Constants.BOSS_START_SCORE
-                and score % Constants.BOSS_START_SCORE is 0
+                and score % Constants.BOSS_START_SCORE == 0
             ):
                 objects.append(
                     GameObjectFactory.create_boss_cat(
@@ -185,7 +220,22 @@ def show_game_end(screen, game_won, score):
     )
     screen.blit(
         score_text,
-        (Constants.SCREEN_WIDTH / 2 - 250, Constants.SCREEN_HEIGHT / 2 - 100),
+        (screen.get_width() / 2 - 250, screen.get_height() / 2 - 100),
+    )
+
+    # Add restart instruction
+    restart_font = pygame.font.Font(None, 36)
+    restart_text = restart_font.render("Press 'R' to restart", True, Constants.WHITE)
+    screen.blit(
+        restart_text,
+        (screen.get_width() / 2 - 100, screen.get_height() / 2 + 50),
+    )
+
+    # Add quit instruction
+    quit_text = restart_font.render("Press 'Q' to quit", True, Constants.WHITE)
+    screen.blit(
+        quit_text,
+        (screen.get_width() / 2 - 100, screen.get_height() / 2 + 100),
     )
 
 
