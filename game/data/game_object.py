@@ -5,6 +5,7 @@ from typing import Optional
 import random
 import pygame
 from data.const_data import Constants
+from pygame.surface import Surface
 
 ANGRY_CAT_COUNT = 4
 angry_images = []
