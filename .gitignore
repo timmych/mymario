@@ -1,1 +1,9 @@
 game/data/__pycache__/*
+game/.DS_Store
+game/images/.DS_Store
+game/images/angrypongpong.o.png
+game/images/angrypongpong1.o.png
+game/images/angrypongpong2.o.png
+game/images/back.o.png
+game/images/hennysteel.o.png
+game/images/whiskers.o.png

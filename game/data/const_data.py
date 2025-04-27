@@ -1,4 +1,10 @@
+"""Game constant data module"""
+
+
+# pylint: disable=too-few-public-methods
 class Constants:
+    """Constants data holder"""
+
     SCREEN_WIDTH = 1024
     SCREEN_HEIGHT = 768
     FPS = 60
