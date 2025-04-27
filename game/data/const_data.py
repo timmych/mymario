@@ -1,4 +1,9 @@
+"""Game constant data module"""
+
+
 class Constants:
+    """Constants data holder"""
+
     SCREEN_WIDTH = 1024
     SCREEN_HEIGHT = 768
     FPS = 60

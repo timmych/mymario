@@ -1,12 +1,39 @@
-import pygame
+"""Module for main game"""
+
 import sys
 import random
-from data.game_object import Boss, GameObject, GameObjectFactory
+import pygame
+from data.game_object import Boss, GameObjectFactory
 from data.const_data import Constants
 
 
+def create_gradient_background_2(width, height):
+    """Game background support"""
+
+    # Create a surface for the gradient
+    surface = pygame.Surface((width, height))
+
+    # Define gradient colors
+    top_color = (0, 0, 50)  # Dark blue
+    bottom_color = (0, 0, 100)  # Lighter blue
+
+    # Create the gradient
+    for y in range(height):
+        # Calculate the color at this y position
+        ratio = y / height
+        r = int(top_color[0] * (1 - ratio) + bottom_color[0] * ratio)
+        g = int(top_color[1] * (1 - ratio) + bottom_color[1] * ratio)
+        b = int(top_color[2] * (1 - ratio) + bottom_color[2] * ratio)
+
+        # Draw a horizontal line of this color
+        pygame.draw.line(surface, (r, g, b), (0, y), (width, y))
+
+    return surface
+
+
 def reset_game():
-    # Reset all game variables
+    """Reset all game variables"""
+
     player = GameObjectFactory.create_player(
         x=(Constants.SCREEN_WIDTH - Constants.DEFAULT_PLAYER_SIZE) // 2,
         y=Constants.SCREEN_HEIGHT - Constants.DEFAULT_PLAYER_SIZE - 10,
@@ -33,18 +60,25 @@ def reset_game():
 
 
 def main():
-    # Initialize Pygame
+    """Game main"""
+
     pygame.init()
 
+    # Current screen dimensions (initially set to default constants)
+    current_width = Constants.SCREEN_WIDTH
+    current_height = Constants.SCREEN_HEIGHT
+
     # Create the screen
-    screen = pygame.display.set_mode((Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT))
+    screen = pygame.display.set_mode((current_width, current_height))
     pygame.display.set_caption("Henny Steel Rabbit vs Angry Cat")
 
     # Fullscreen state
     is_fullscreen = False
 
-    # Load images
-    background_image = pygame.image.load("images/back.png")
+    # Create gradient background
+    background = pygame.image.load("images/back.png")
+    # Scale background to match current screen dimensions
+    background = pygame.transform.scale(background, (current_width, current_height))
 
     # Initialize game variables
     (
@@ -60,14 +94,15 @@ def main():
     ) = reset_game()
 
     # Score variables
-    font = pygame.font.Font(None, 36)
+    score_font = pygame.font.Font(None, 48)  # Larger font for score
 
     # Clock to control the frame rate
     clock = pygame.time.Clock()
 
     # Main game loop
     while True:
-        screen.blit(background_image, (0, 0))
+        # Draw gradient background
+        screen.blit(background, (0, 0))
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -89,10 +124,48 @@ def main():
                     is_fullscreen = not is_fullscreen
                     if is_fullscreen:
                         screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-                    else:
-                        screen = pygame.display.set_mode(
-                            (Constants.SCREEN_WIDTH, Constants.SCREEN_HEIGHT)
+                        # Update current screen dimensions
+                        current_width = screen.get_width()
+                        current_height = screen.get_height()
+                        # Scale background to match new dimensions
+                        background = pygame.transform.scale(
+                            background, (current_width, current_height)
                         )
+                        # Reset game to use new dimensions
+                        (
+                            player,
+                            objects,
+                            bullets,
+                            object_spawn_timer,
+                            object_spawn_interval,
+                            score,
+                            game_on,
+                            game_won,
+                            game_loop_counter,
+                        ) = reset_game()
+                    else:
+                        # Reset to default windowed dimensions
+                        current_width = Constants.SCREEN_WIDTH
+                        current_height = Constants.SCREEN_HEIGHT
+                        screen = pygame.display.set_mode(
+                            (current_width, current_height)
+                        )
+                        # Scale background to match new dimensions
+                        background = pygame.transform.scale(
+                            background, (current_width, current_height)
+                        )
+                        # Reset game to use new dimensions
+                        (
+                            player,
+                            objects,
+                            bullets,
+                            object_spawn_timer,
+                            object_spawn_interval,
+                            score,
+                            game_on,
+                            game_won,
+                            game_loop_counter,
+                        ) = reset_game()
                 elif not game_on and event.key == pygame.K_r:
                     # Reset game when game is over
                     (
@@ -116,12 +189,12 @@ def main():
             player.x -= 6
         if (
             keys[pygame.K_RIGHT]
-            and player.x < Constants.SCREEN_WIDTH - Constants.DEFAULT_PLAYER_SIZE
+            and player.x < current_width - Constants.DEFAULT_PLAYER_SIZE
         ):
             player.x += 6
         if (
             keys[pygame.K_UP]
-            and player.y < Constants.SCREEN_HEIGHT - Constants.DEFAULT_PLAYER_SIZE
+            and player.y < current_height - Constants.DEFAULT_PLAYER_SIZE
         ):
             player.y -= 4
         if keys[pygame.K_DOWN] and player.y >= 0:
@@ -134,7 +207,7 @@ def main():
                 objects.append(
                     GameObjectFactory.create_angry_cat(
                         x=random.randint(
-                            0, Constants.SCREEN_WIDTH - Constants.DEFAULT_OBJECT_SIZE
+                            0, current_width - Constants.DEFAULT_OBJECT_SIZE
                         ),
                         y=-Constants.DEFAULT_OBJECT_SIZE,
                         game_loop_i=game_loop_counter,
@@ -149,9 +222,7 @@ def main():
             ):
                 objects.append(
                     GameObjectFactory.create_boss_cat(
-                        x=random.randint(
-                            0, Constants.SCREEN_WIDTH - Constants.BOSS_OBJECT_SIZE
-                        ),
+                        x=random.randint(0, current_width - Constants.BOSS_OBJECT_SIZE),
                         y=-Constants.BOSS_OBJECT_SIZE,
                     )
                 )
@@ -164,8 +235,8 @@ def main():
             for blt in bullets:
                 blt.move()
 
-            objects = [obj for obj in objects if obj.y < Constants.SCREEN_HEIGHT]
-            bullets = [blt for blt in bullets if blt.y < Constants.SCREEN_HEIGHT]
+            objects = [obj for obj in objects if obj.y < current_height]
+            bullets = [blt for blt in bullets if blt.y < current_height]
 
             # Collision detection: bullets and objects
             for blt in bullets:
@@ -196,9 +267,11 @@ def main():
         for blt in bullets:
             screen.blit(blt.surface, blt.pos())
 
-        # Display score
-        score_text = font.render(f"Score: {score}", True, Constants.WHITE)
-        screen.blit(score_text, (10, 10))
+        # Display score with a nice background
+        score_text = score_font.render(f"Score: {score}", True, Constants.WHITE)
+        score_rect = score_text.get_rect(topleft=(10, 10))
+        pygame.draw.rect(screen, (0, 0, 0, 128), score_rect.inflate(20, 10))
+        screen.blit(score_text, score_rect)
 
         if not game_on:
             show_game_end(screen, game_won, score)
@@ -211,6 +284,13 @@ def main():
 
 
 def show_game_end(screen, game_won, score):
+    """Game end prompt support"""
+    # Create a semi-transparent overlay
+    overlay = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 128))  # Semi-transparent black
+    screen.blit(overlay, (0, 0))
+
+    # Main message
     font = pygame.font.Font(None, 80)
     win_msg = "YOU WIN!" if game_won else "You lost :("
     score_text = font.render(
@@ -218,25 +298,25 @@ def show_game_end(screen, game_won, score):
         True,
         Constants.GREEN if game_won else Constants.RED,
     )
-    screen.blit(
-        score_text,
-        (screen.get_width() / 2 - 250, screen.get_height() / 2 - 100),
+    text_rect = score_text.get_rect(
+        center=(screen.get_width() / 2, screen.get_height() / 2 - 100)
     )
+    screen.blit(score_text, text_rect)
 
     # Add restart instruction
     restart_font = pygame.font.Font(None, 36)
     restart_text = restart_font.render("Press 'R' to restart", True, Constants.WHITE)
-    screen.blit(
-        restart_text,
-        (screen.get_width() / 2 - 100, screen.get_height() / 2 + 50),
+    restart_rect = restart_text.get_rect(
+        center=(screen.get_width() / 2, screen.get_height() / 2 + 50)
     )
+    screen.blit(restart_text, restart_rect)
 
     # Add quit instruction
     quit_text = restart_font.render("Press 'Q' to quit", True, Constants.WHITE)
-    screen.blit(
-        quit_text,
-        (screen.get_width() / 2 - 100, screen.get_height() / 2 + 100),
+    quit_rect = quit_text.get_rect(
+        center=(screen.get_width() / 2, screen.get_height() / 2 + 100)
     )
+    screen.blit(quit_text, quit_rect)
 
 
 if __name__ == "__main__":
